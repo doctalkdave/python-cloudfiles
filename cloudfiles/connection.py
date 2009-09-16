@@ -330,12 +330,12 @@ class Connection(object):
         Returns a list of Containers, including object count and size.
 
         >>> connection.list_containers_info()
-        [{u'count': 510, u'bytes': 2081717, u'name': u'new_container'},
-         {u'count': 12, u'bytes': 23074, u'name': u'old_container'},
-         {u'count': 0, u'bytes': 0, u'name': u'container1'},
-         {u'count': 0, u'bytes': 0, u'name': u'container2'},
-         {u'count': 0, u'bytes': 0, u'name': u'container3'},
-         {u'count': 3, u'bytes': 2306, u'name': u'test'}]
+        [{u'count': 510, u'bytes': 2081717, u'name': 'new_container'},
+         {u'count': 12, u'bytes': 23074, u'name': 'old_container'},
+         {u'count': 0, u'bytes': 0, u'name': 'container1'},
+         {u'count': 0, u'bytes': 0, u'name': 'container2'},
+         {u'count': 0, u'bytes': 0, u'name': 'container3'},
+         {u'count': 3, u'bytes': 2306, u'name': 'test'}]
 
         @rtype: list({"name":"...", "count":..., "bytes":...})
         @return: a list of all container info as dictionaries with the
@@ -354,7 +354,17 @@ class Connection(object):
         if (response.status < 200) or (response.status > 299):
             buff = response.read()
             raise ResponseError(response.status, response.reason)
-        return json_loads(response.read())
+        dict_list = json_loads(response.read())
+        for d in dict_list:
+            for k in d:
+                if isinstance(d[k], unicode):
+                    v = []
+                    for c in d[k]:
+                        # take the unicode value and turn it in to a byte stream
+                        try: v.append(chr(ord(c)))
+                        except: v.append(c) # to handle unpatched cloud files
+                    d[k] = ''.join(v)
+        return dict_list
 
     def list_containers(self, limit=None, marker=None, **parms):
         """
