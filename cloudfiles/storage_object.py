@@ -536,6 +536,33 @@ class Object(object):
         return "%s/%s" % (self.container.public_uri().rstrip('/'),
                 quote(self.name))
 
+    def rename(self, new_name):
+        """
+        Renames the current object to new_name.
+        
+        The object will be fetched to the client, re-PUT to the server with
+        the new name, and then deleted from the server.
+        
+        This is a convenience function until a rename functionality is
+        implemented server-side for Cloud Files.
+        
+        @param new_name: The new name of the object
+        @type new_name: str
+        """
+        object_record = {}
+        object_record['name'] = new_name
+        object_record['content_type'] = self.content_type
+        object_record['bytes'] = self.size
+        object_record['last_modified'] = self.last_modified
+        object_record['hash'] = self._etag
+        new_obj = self.__class__(self.container, name=new_name,
+                                object_record=object_record)
+        new_obj.send(self.stream())
+        new_obj.metadata = self.metadata
+        new_obj.sync_metadata()
+        self.container.delete_object(self.name)
+        self.name = new_name
+
 class ObjectResults(object):
     """
     An iterable results set object for Objects.
